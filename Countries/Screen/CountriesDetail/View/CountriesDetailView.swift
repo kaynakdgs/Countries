@@ -6,24 +6,24 @@
 //
 
 import UIKit
+import SDWebImageSVGCoder
 
 final class CountriesDetailView: UIView {
     
-    private lazy var countryFlagImageView: UIImageView = {
+    private(set) lazy var countryFlagImageView: UIImageView = {
         let imageView = UIImageView()
         imageView.contentMode = .scaleAspectFill
-        imageView.image = UIImage(named: "Flag-Turkey")
+        imageView.image = UIImage(named: "loading")
         return imageView
     }()
     
-    private lazy var countryCodeLabel: UILabel = {
+    private(set) lazy var countryCodeLabel: UILabel = {
         let label = UILabel()
-        label.font = UIFont.systemFont(ofSize: 14, weight: .regular)
+        label.font = UIFont.systemFont(ofSize: 14, weight: .bold)
         label.numberOfLines = 1
         label.textAlignment = .left
         label.backgroundColor = .clear
         label.textColor = Constants.Colors.appDark
-        label.text = "Country Code: TR"
         return label
     }()
     
@@ -40,7 +40,7 @@ final class CountriesDetailView: UIView {
         label.textAlignment = .left
         label.backgroundColor = .clear
         label.textColor = Constants.Colors.whiteColor
-        label.text = "For Move Information"
+        label.text = "For More Information"
         return label
     }()
     
@@ -58,14 +58,32 @@ final class CountriesDetailView: UIView {
         return button
     }()
     
+    var countryDetail: CountryDetail?
+    var tappedFavorite: ((CountryDetail) -> Void)?
+    var wikiLabel: String = ""
+    
     override init(frame: CGRect) {
         super.init(frame: frame)
         setupView()
         gestureConfig()
     }
     
-    func updateUI() {
-        
+    func updateUI(countryDetail: CountryDetail) {
+        self.countryDetail = countryDetail
+        countryCodeLabel.attributedText = concatenateAttributedString(labelText: "Country Code: ", code: "\(countryDetail.code ?? "")")
+        wikiLabel = countryDetail.wikiDataID ?? ""
+        guard let imageURL = countryDetail.flagImageURI else { return }
+        let bitmapSize = CGSize(width: frame.width, height: 360)
+        countryFlagImageView.sd_setImage(with: URL(string: imageURL), placeholderImage: UIImage(named: "loading"), options: [], context: [.imageThumbnailPixelSize : bitmapSize])
+    }
+    
+    func updateButtonStatus(isSelected: Bool) {
+        navigationBarButton.tintColor = isSelected ? Constants.Colors.appDark : Constants.Colors.unSaved
+    }
+    
+    @objc func favoriteButtonTapped(sender: UIButton) {
+        guard let safeCountry = countryDetail else { return }
+        tappedFavorite?(safeCountry)
     }
     
     private func gestureConfig() {
@@ -79,11 +97,21 @@ final class CountriesDetailView: UIView {
     
     @objc
     func wikiDataLink(tapGesture: UITapGestureRecognizer) {
-        UIApplication.shared.open(URL(string: "https://www.wikidata.org/wiki/Q30")! as URL, options: [:], completionHandler: nil)
+        UIApplication.shared.open(URL(string: "https://www.wikidata.org/wiki/\(wikiLabel)")! as URL, options: [:], completionHandler: nil)
     }
     
-    @objc func favoriteButtonTapped(sender: UIButton) {
-        navigationBarButton.tintColor = navigationBarButton.tintColor == Constants.Colors.unSaved ? Constants.Colors.appDark : Constants.Colors.unSaved
+    private func concatenateAttributedString(labelText: String, code: String) -> NSAttributedString {
+        let countryLabel = labelText
+        let labelAtt = [NSAttributedString.Key.font : UIFont.systemFont(ofSize: 14, weight: .bold)]
+        let boldcountryLabel = NSMutableAttributedString(string: countryLabel, attributes: labelAtt)
+        
+        let countryCode = code
+        let codeAtt = [NSAttributedString.Key.font : UIFont.systemFont(ofSize: 14, weight: .regular)]
+        let regularCountryCode = NSMutableAttributedString(string: countryCode, attributes: codeAtt)
+        
+        let labelText = NSMutableAttributedString(attributedString: boldcountryLabel)
+        labelText.append(regularCountryCode)
+        return labelText
     }
     
     required init?(coder: NSCoder) {
@@ -110,9 +138,9 @@ extension CountriesDetailView {
             countryFlagImageView.topAnchor.constraint(equalTo: safeAreaLayoutGuide.topAnchor, constant: 12.0),
             countryFlagImageView.leadingAnchor.constraint(equalTo: self.leadingAnchor),
             countryFlagImageView.trailingAnchor.constraint(equalTo: self.trailingAnchor),
-            countryFlagImageView.heightAnchor.constraint(equalToConstant: 300.0),
+            countryFlagImageView.heightAnchor.constraint(equalToConstant: 360.0),
             
-            countryCodeLabel.topAnchor.constraint(equalTo: countryFlagImageView.bottomAnchor, constant: 18.0),
+            countryCodeLabel.topAnchor.constraint(equalTo: countryFlagImageView.bottomAnchor, constant: 24.0),
             countryCodeLabel.leadingAnchor.constraint(equalTo: self.leadingAnchor, constant: 18.0),
             
             linkedView.topAnchor.constraint(equalTo: countryCodeLabel.bottomAnchor, constant: 12.0),

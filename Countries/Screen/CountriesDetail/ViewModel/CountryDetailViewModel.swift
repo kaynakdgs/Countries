@@ -1,25 +1,19 @@
 //
-//  CountriesHomeViewModel.swift
+//  CountryDetailViewModel.swift
 //  Countries
 //
-//  Created by Doğuş  Kaynak on 23.02.2022.
+//  Created by Doğuş  Kaynak on 25.02.2022.
 //
 
-import UIKit
+import Foundation
 
-final class CountriesHomeViewModel {
+final class CountryDetailViewModel {
     
     let userDefaults = UserDefaults.standard
-    var countryList: [Country] = []
+    var countryDetail: CountryDetail?
+    
     var savedCountries: [String:[String]] = [:]
-    
-    var numberOfItems: Int {
-        return countryList.count
-    }
-    
-    func getItem(at index: Int) -> Country {
-        return countryList[index]
-    }
+    var countryCode: String = ""
     
     func retrieveData() {
         if let savedData = userDefaults.dictionary(forKey: Constants.Keys.isFavorite) as? [String:[String]] {
@@ -27,7 +21,7 @@ final class CountriesHomeViewModel {
         }
     }
     
-    func addToFavorites(savedCountry: Country) {
+    func addToFavorites(savedCountry: CountryDetail) {
         if let code = savedCountry.code {
             if savedCountries.keys.contains(code) {
                 savedCountries.removeValue(forKey: code)
@@ -39,13 +33,13 @@ final class CountriesHomeViewModel {
         }
     }
     
-    func fetchData(success: @escaping() -> Void, failure: @escaping(String) -> Void) {
-        ApiWorker.shared.getData { [weak self] result in
+    func fetchCountryDetails(countryCode: String, success: @escaping() -> Void, failure: @escaping(String) -> Void) {
+        ApiWorker.shared.getDetail(countryCode: countryCode) { [weak self] result in
             guard let self = self else { return }
             switch result {
-            case .success(let countries):
-                guard let country = countries.data else { return }
-                self.countryList = country
+            case .success(let details):
+                guard let detail = details.data else { return }
+                self.countryDetail = detail
                 DispatchQueue.main.async {
                     success()
                 }

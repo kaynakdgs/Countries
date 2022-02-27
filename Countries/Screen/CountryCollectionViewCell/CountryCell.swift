@@ -16,7 +16,6 @@ final class CountryCell: UICollectionViewCell {
         label.textAlignment = .left
         label.backgroundColor = .clear
         label.textColor = Constants.Colors.appDark
-        label.text = "Turkey"
         return label
     }()
     
@@ -25,20 +24,34 @@ final class CountryCell: UICollectionViewCell {
                                                 width: 30,
                                                 height: 30))
     
+    var country: Country?
+    var tappedFavorite: ((Country) -> Void)?
+    
     override init(frame: CGRect) {
         super.init(frame: frame)
         setupView()
         setupButton()
     }
     
-    func updateUI() {
-        
+    func updateUI(with country: Country) {
+        self.country = country
+        countryNameLabel.text = country.name
+    }
+    
+    func updateButtonStatus(isSelected: Bool) {
+        favoriteButton.imageView?.tintColor = isSelected ? Constants.Colors.appDark : Constants.Colors.unSaved
+    }
+    
+    @objc func favoriteButtonTapped(sender: UIButton) {
+        guard let safeCountry = country else { return }
+        tappedFavorite?(safeCountry)
     }
     
     private func setupButton() {
         favoriteButton.setImage(UIImage(systemName: "star.fill"), for: .normal)
         favoriteButton.imageView?.tintColor = Constants.Colors.unSaved
         favoriteButton.backgroundColor = Constants.Colors.appLightGray
+        favoriteButton.addTarget(self, action: #selector(favoriteButtonTapped), for: .touchUpInside)
     }
     
     private func setupUI() {

@@ -25,4 +25,8 @@ struct Constants {
     struct CellHeights {
         static let countryCellHeight: CGFloat = 42.0
     }
+    
+    struct Keys {
+        static let isFavorite: String = "isFavorite"
+    }
 }

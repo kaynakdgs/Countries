@@ -1,24 +1,34 @@
 //
-//  CountriesHomeViewModel.swift
+//  CountriesSavedViewModel.swift
 //  Countries
 //
-//  Created by Doğuş  Kaynak on 23.02.2022.
+//  Created by Doğuş  Kaynak on 27.02.2022.
 //
 
-import UIKit
+import Foundation
 
-final class CountriesHomeViewModel {
+final class CountriesSavedViewModel {
     
     let userDefaults = UserDefaults.standard
     var countryList: [Country] = []
     var savedCountries: [String:[String]] = [:]
+    var savedCountryList: [Country] = []
     
     var numberOfItems: Int {
-        return countryList.count
+        return savedCountryList.count
     }
     
     func getItem(at index: Int) -> Country {
-        return countryList[index]
+        return savedCountryList[index]
+    }
+    
+    func getSaved() {
+        savedCountryList = []
+        for savedCountry in countryList {
+            if savedCountries.keys.contains(savedCountry.code ?? "") {
+                savedCountryList.append(savedCountry)
+            }
+        }
     }
     
     func retrieveData() {
@@ -27,15 +37,10 @@ final class CountriesHomeViewModel {
         }
     }
     
-    func addToFavorites(savedCountry: Country) {
+    func removeFromFavorites(savedCountry: Country) {
         if let code = savedCountry.code {
-            if savedCountries.keys.contains(code) {
-                savedCountries.removeValue(forKey: code)
-                userDefaults.set(savedCountries, forKey: Constants.Keys.isFavorite)
-            } else {
-                savedCountries[code] = [savedCountry.name ?? ""]
-                userDefaults.set(savedCountries, forKey: Constants.Keys.isFavorite)
-            }
+            savedCountries.removeValue(forKey: code)
+            userDefaults.set(savedCountries, forKey: Constants.Keys.isFavorite)
         }
     }
     

@@ -10,7 +10,7 @@ import UIKit
 final class CountriesSavedViewController: UIViewController {
     
     private let savedCountriesHomeView = CountriesHomeView()
-    var savedCountries: [CountryCell] = []
+    var viewModel = CountriesSavedViewModel()
     
     override func loadView() {
         super.loadView()
@@ -19,18 +19,34 @@ final class CountriesSavedViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        setupCollectionView()
+        hideKeyboardWhenTappedAround()
+        fetchData()
         setupNavigationController()
+        setupCollectionView()
         view.backgroundColor = Constants.Colors.appLightGray
     }
     
-    @objc func favoriteButtonTapped(sender: UIButton) {
-        sender.imageView?.tintColor = sender.imageView?.tintColor == Constants.Colors.unSaved ? Constants.Colors.appDark : Constants.Colors.unSaved
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        viewModel.retrieveData()
+        viewModel.getSaved()
+        savedCountriesHomeView.collectionView.reloadData()
+    }
+    
+    private func fetchData() {
+        viewModel.fetchData { [weak self] in
+            guard let self = self else { return }
+            self.viewModel.getSaved()
+            self.savedCountriesHomeView.collectionView.reloadData()
+        } failure: { error in
+            self.showAlert(alertText: "Hata", alertMessage: error.description)
+        }
     }
     
     private func setupCollectionView() {
         savedCountriesHomeView.collectionView.delegate = self
         savedCountriesHomeView.collectionView.dataSource = self
+        savedCountriesHomeView.collectionView.reloadData()
     }
     
     private func setupNavigationController() {
@@ -45,30 +61,43 @@ final class CountriesSavedViewController: UIViewController {
 //MARK: - CollectionView Delegate & DataSource & DelegateFlowLayout
 extension CountriesSavedViewController: UICollectionViewDelegate, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return 1
+        return viewModel.numberOfItems
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let countryCell: CountryCell = collectionView.dequeueCell(withReuseIdentifier: Constants.CellIdentifiers.countyCellId, for: indexPath)
+        let item = viewModel.getItem(at: indexPath.item)
+        countryCell.updateUI(with: item)
+        countryCell.updateButtonStatus(isSelected: viewModel.savedCountries.keys.contains(item.code ?? ""))
+        countryCell.tappedFavorite = { [weak self] country in
+            guard let self = self else { return }
+            self.viewModel.removeFromFavorites(savedCountry: country)
+            self.viewModel.getSaved()
+            self.savedCountriesHomeView.collectionView.reloadData()
+        }
         
-        countryCell.favoriteButton.addTarget(self, action: #selector(favoriteButtonTapped), for: .touchUpInside)
         return countryCell
     }
     
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         let vc = CountriesDetailViewController()
-        vc.navigationItem.title = "Turkey"
+        vc.navigationItem.title = viewModel.savedCountryList[indexPath.item].name
+        vc.viewModel.countryCode = viewModel.savedCountryList[indexPath.item].code ?? ""
         navigationController?.pushViewController(vc, animated: true)
     }
     
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
-        let width = collectionView.frame.width-24
+        let width = collectionView.frame.width-64
         let height = Constants.CellHeights.countryCellHeight
         
         return CGSize(width: width, height: height)
     }
     
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, insetForSectionAt section: Int) -> UIEdgeInsets {
-        return UIEdgeInsets(top: 24, left: 0, bottom: 12, right: 0)
+        return UIEdgeInsets(top: 18, left: 0, bottom: 12, right: 0)
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, minimumLineSpacingForSectionAt section: Int) -> CGFloat {
+        return 16
     }
 }
